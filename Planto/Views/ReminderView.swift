@@ -7,52 +7,58 @@
 
 import SwiftUI
 
-// Plant Reminder View
+
+// MARK: - Plant Reminder Sheet View
+// Can be used for both ADDING new plants and EDITING existing plants
 struct PlantReminderSheet: View {
-    
+    // MARK: - Properties
     @Binding var isPresented: Bool
+    var onSave: (PlantReminder) -> Void
+    var onDelete: ((PlantReminder) -> Void)? // Optional: only used in edit mode
     
-    // MARK: Variables
+    // Optional: If provided, we're in EDIT mode. If nil, we're in ADD mode
+    var existingPlant: PlantReminder?
     
-    @State private var plantName: String = "Pothos"
+    // MARK: - State Variables
+    @State private var plantName: String = ""
     @State private var selectedRoom: String = "Bedroom"
     @State private var selectedLight: String = "Full sun"
     @State private var wateringFrequency: String = "Every day"
     @State private var waterAmount: String = "20-50 ml"
     
+    // Track if we're in edit mode
+    private var isEditMode: Bool {
+        existingPlant != nil
+    }
+    
     // MARK: - Data Arrays
-    let rooms = ["Living Room", "Bedroom", "Kitchen", "Bathroom", "Balcony"]
-    let lightOptions = ["Full sun", "Partial sun", "Low light"]
-    let wateringOptions = ["Every day", "Every 2 days", "Every 3 days", "Once a week", "Every 10 days","Every 2 weeks"]
-    let waterAmounts = [ "20-50 ml", "50-100 ml", "100-200 ml",]
+    let rooms = ["Living Room", "Bedroom", "Kitchen", "Bathroom", "Balcony",]
+    let lightOptions = ["Full sun", "Partial sun",  "Low light"]
+    let wateringOptions = ["Every day", "Every 2 days", "Every 3 days", "Once a week", "Every 2 weeks"]
+    let waterAmounts = ["10-20 ml", "20-50 ml", "50-100 ml", "100-200 ml", "200+ ml"]
     
     var body: some View {
         ZStack {
             // MARK: - Dimmed Background
-            
             Color.black.opacity(0.4)
                 .ignoresSafeArea()
                 .onTapGesture {
-                    
                     withAnimation {
                         isPresented = false
                     }
                 }
             
             VStack(spacing: 0) {
-                
                 Spacer()
                 
                 // MARK: - Sheet Container
                 VStack(spacing: 0) {
                     // MARK: - Header Bar
-                    
                     HStack {
-                        // Close button (X)
-                        
+                        // Close Button (X)
                         Button(action: {
                             withAnimation {
-                                isPresented = false // Slides sheet down
+                                isPresented = false
                             }
                         }) {
                             Image(systemName: "xmark")
@@ -61,68 +67,67 @@ struct PlantReminderSheet: View {
                                 .frame(width: 44, height: 44)
                                 .background(Color(white: 0.2))
                                 .clipShape(Circle())
+                                
                         }
+                        
                         
                         Spacer()
                         
-                        // Title in the center
-                        Text("Set Reminder")
+                        // Title - changes based on mode
+                        Text(isEditMode ? "Edit Reminder" : "Set Reminder")
                             .font(.headline)
                             .foregroundColor(.white)
                         
                         Spacer()
                         
-                        // Save button (✓)
+                        // Save Button
                         Button(action: {
                             saveReminder()
                         }) {
                             Image(systemName: "checkmark")
                                 .foregroundColor(.white)
                                 .font(.system(size: 18, weight: .bold))
-                                .frame(width:44, height: 44)
-                                .background(Color.green)
+                                .frame(width: 44, height: 44)
+                                .background(Color(hex: "22BA8C"))
                                 .clipShape(Circle())
                         }
                     }
                     .padding(.horizontal, 20)
-                    .padding(.top, 50) // Increase this number to push header content down more
+                    .padding(.top, 50)
                     .padding(.bottom, 16)
                     .background(Color(white: 0.1))
                     
+                  
+                    // MARK: - Form Content
+                
+                    
                     ScrollView {
                         VStack(spacing: 20) {
-                            // MARK: - Plant Name Text Field
-                            // Editable text input for the plant's name
+                            // Plant Name Text Field
                             HStack {
                                 Text("Plant Name")
                                     .foregroundColor(.white)
                                 Text("|")
                                     .foregroundColor(.gray)
-                                // TextField is bound to plantName state
-                                TextField("", text: $plantName)
+                                TextField("Enter plant name", text: $plantName)
                                     .foregroundColor(.gray)
                             }
                             .padding()
                             .background(Color(white: 0.15))
-                            .cornerRadius(12)
+                            .cornerRadius(20)
                             .padding(.horizontal)
-                            .padding(.top, 40) // Increased from 20 to 40
+                            .padding(.top, 40)
                             
-                            // MARK: - Room and Light Section
-                           
+                            // Room and Light selct
                             VStack(spacing: 0) {
-                                
-                                
+                                // Room Picker
                                 Menu {
-                                    // Loop through all room options
                                     ForEach(rooms, id: \.self) { room in
                                         Button(action: {
-                                            // Update selected room when tapped
                                             selectedRoom = room
                                         }) {
                                             HStack {
                                                 Text(room)
-                                                // Show checkmark next to selected option
                                                 if selectedRoom == room {
                                                     Image(systemName: "checkmark")
                                                 }
@@ -130,18 +135,15 @@ struct PlantReminderSheet: View {
                                         }
                                     }
                                 } label: {
-                                    // Menu button appearance
                                     HStack {
-                                        Image(systemName: "location.fill")
+                                        Image(systemName: "location")
                                             .foregroundColor(.white)
                                             .font(.system(size: 16))
                                         Text("Room")
                                             .foregroundColor(.white)
                                         Spacer()
-                                        // Display currently selected room
                                         Text(selectedRoom)
                                             .foregroundColor(.gray)
-                                        // Up/down chevrons indicate dropdown
                                         Image(systemName: "chevron.up.chevron.down")
                                             .foregroundColor(.gray)
                                             .font(.system(size: 10, weight: .bold))
@@ -149,15 +151,15 @@ struct PlantReminderSheet: View {
                                     .padding()
                                     .background(Color(white: 0.15))
                                     .contentShape(Rectangle())
+                                    .cornerRadius(20)
                                 }
                                 
-                                // Divider line between items
+                                
                                 Divider()
                                     .background(Color(white: 0.25))
-                                    .padding(.leading, 52) // Indent to align after icon
+                                    .padding(.leading, 52)
                                 
-                                // MARK: - Light Picker Menu
-                                // Same structure as Room picker
+                                // Light Picker
                                 Menu {
                                     ForEach(lightOptions, id: \.self) { light in
                                         Button(action: {
@@ -173,7 +175,7 @@ struct PlantReminderSheet: View {
                                     }
                                 } label: {
                                     HStack {
-                                        Image(systemName: "sun.max.fill")
+                                        Image(systemName: "sun.max")
                                             .foregroundColor(.white)
                                             .font(.system(size: 16))
                                         Text("Light")
@@ -188,13 +190,13 @@ struct PlantReminderSheet: View {
                                     .padding()
                                     .background(Color(white: 0.15))
                                     .contentShape(Rectangle())
+                                    .cornerRadius(20)
                                 }
                             }
                             .cornerRadius(12)
                             .padding(.horizontal)
                             
-                            // MARK: - Watering Section
-                            
+                            //  Watering Select
                             VStack(spacing: 0) {
                                 
                                 Menu {
@@ -212,7 +214,7 @@ struct PlantReminderSheet: View {
                                     }
                                 } label: {
                                     HStack {
-                                        Image(systemName: "drop.fill")
+                                        Image(systemName: "drop")
                                             .foregroundColor(.white)
                                             .font(.system(size: 16))
                                         Text("Watering Days")
@@ -227,13 +229,15 @@ struct PlantReminderSheet: View {
                                     .padding()
                                     .background(Color(white: 0.15))
                                     .contentShape(Rectangle())
+                                    .cornerRadius(20)
                                 }
+                                
                                 
                                 Divider()
                                     .background(Color(white: 0.25))
                                     .padding(.leading, 52)
                                 
-                                // MARK: - Water Amount Picker Menu
+                                // Water Amount
                                 Menu {
                                     ForEach(waterAmounts, id: \.self) { amount in
                                         Button(action: {
@@ -249,7 +253,7 @@ struct PlantReminderSheet: View {
                                     }
                                 } label: {
                                     HStack {
-                                        Image(systemName: "drop.fill")
+                                        Image(systemName: "drop")
                                             .foregroundColor(.white)
                                             .font(.system(size: 16))
                                         Text("Water")
@@ -264,35 +268,85 @@ struct PlantReminderSheet: View {
                                     .padding()
                                     .background(Color(white: 0.15))
                                     .contentShape(Rectangle())
+                                    .cornerRadius(20)
                                 }
+                                
                             }
                             .cornerRadius(12)
                             .padding(.horizontal)
                             
-                            // Bottom spacing
+                            // MARK: - Delete Button in edit
+                            if isEditMode {
+                                Button(action: {
+                                    deleteReminder()
+                                }) {
+                                    Text("Delete Reminder")
+                                        .font(.headline)
+                                        .foregroundColor(.red)
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: 50)
+                                        .background(Color(white: 0.15))
+                                        .cornerRadius(12)
+                                }
+                                .padding(.horizontal)
+                                .padding(.top, 10)
+                            }
+                            
                             Spacer(minLength: 40)
                         }
                     }
                 }
                 .frame(maxWidth: .infinity)
                 .background(Color(white: 0.1))
-                // Round only the top corners to create sheet appearance
                 .cornerRadius(20, corners: [.topLeft, .topRight])
             }
         }
         .ignoresSafeArea()
+        // MARK: - Load Plant Data
+        
+        .onAppear {
+            if let plant = existingPlant {
+                // Load existing plant data into form fields
+                plantName = plant.plantName
+                selectedRoom = plant.room
+                selectedLight = plant.lightCondition
+                waterAmount = plant.waterAmount
+            }
+        }
     }
     
-    // MARK: - Save Function
-    
+    // MARK: - Save
     func saveReminder() {
+        guard !plantName.trimmingCharacters(in: .whitespaces).isEmpty else {
+            print("Plant name is required")
+            return
+        }
         
-        print("Saving reminder for \(plantName)")
-        print("Room: \(selectedRoom)")
-        print("Light: \(selectedLight)")
-        print("Watering: \(wateringFrequency)")
-        print("Water amount: \(waterAmount)")
+        // Create updated plant (keeping same ID if editing)
+        let updatedReminder = PlantReminder(
+            id: existingPlant?.id ?? UUID(), // Keep same ID if editing
+            plantName: plantName,
+            room: selectedRoom,
+            lightCondition: selectedLight,
+            waterAmount: waterAmount,
+            isChecked: existingPlant?.isChecked ?? false // Keep checked state
+        )
         
+        onSave(updatedReminder)
+        
+//        print("✅ Saved: \(plantName)")
+        
+        withAnimation {
+            isPresented = false
+        }
+    }
+    
+    // MARK: - Delete plant
+    func deleteReminder() {
+        guard let plant = existingPlant else { return }
+        onDelete?(plant)
+        
+//        print("🗑️ Deleted: \(plant.plantName)")
         
         withAnimation {
             isPresented = false
@@ -300,8 +354,7 @@ struct PlantReminderSheet: View {
     }
 }
 
-// MARK: - Helper Extension
-// Extension to enable rounding specific corners
+//to make corners more radius
 extension View {
     func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
         clipShape(RoundedCorner(radius: radius, corners: corners))
@@ -309,7 +362,6 @@ extension View {
 }
 
 // MARK: - Custom Shape
-// Shape that allows specifying which corners to round
 struct RoundedCorner: Shape {
     var radius: CGFloat = .infinity
     var corners: UIRectCorner = .allCorners
@@ -324,12 +376,15 @@ struct RoundedCorner: Shape {
     }
 }
 
-struct PlantReminderSheet_Previews: PreviewProvider {
-    static var previews: some View {
-        ZStack {
-            // Purple background to simulate app behind sheet
-            Color.purple
-            PlantReminderSheet(isPresented: .constant(true))
+// MARK: - Preview
+#Preview {
+    ZStack {
+        Color.purple
+        // Preview for ADD mode
+        PlantReminderSheet(isPresented: .constant(true)) { _ in
+            print("Preview save")
         }
+        
+        
     }
 }
